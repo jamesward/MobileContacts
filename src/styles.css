@@ -1,0 +1,32 @@
+@namespace s "library://ns.adobe.com/flex/spark";
+@namespace mx "library://ns.adobe.com/flex/mx";
+
+global {
+	font-size: 24;
+	focus-color: #FF5900;
+	rollOverColor: #FF5900;
+	selection-color: #FF5900;
+}
+
+s|Application {
+	background-color: #AEAEAE;
+	color: #000000;
+}
+
+.list {
+	background-color: #DCDCDC;
+	color: #000000;
+}
+
+.title {
+	font-size: 32;	
+}
+
+.action {
+	font-size: 28;
+}
+
+.actionDetails {
+	font-size: 20;
+	color: #666666;
+}

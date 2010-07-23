@@ -1,0 +1,283 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009"
+					   xmlns:s="library://ns.adobe.com/flex/spark"
+					   xmlns:mx="library://ns.adobe.com/flex/mx"
+					   xmlns:flexforforce="http://flexforforce.salesforce.com"
+					   xmlns:views="views.*"
+					   width="100%" height="100%">
+
+	<fx:Style source="styles.css"/>
+	
+	<fx:Declarations>
+		<!--
+		<s:TraceTarget includeCategory="true"
+					   includeLevel="true"
+					   includeTime="true"
+					   level="{LogEventLevel.INFO}"
+					   filters="{['com.salesforce.*']}"/>
+		-->
+
+		<flexforforce:F3WebApplication id="app"
+										   loginComplete="loginCompleteHandler(event)"
+										   loginFailed="loginFailedHandler(event)"
+										   sessionExpired="sessionExpiredHandler(event)"
+										   serverUrl="https://login.salesforce.com/services/Soap/u/17.0"
+										   requiredTypes="Account,Contact"/>
+		
+		<mx:AnimateProperty id="ml" target="{h}" duration="300" property="x" toValue="{-width}"/>
+		<mx:AnimateProperty id="mr" target="{h}" duration="300" property="x" toValue="0"/>
+	</fx:Declarations>
+
+	<fx:Script>
+		<![CDATA[
+			import com.salesforce.events.LoginFaultEvent;
+			import com.salesforce.events.LoginResultEvent;
+			import com.salesforce.events.SessionExpiredEvent;
+			import com.salesforce.events.StatusChangedEvent;
+			
+			import context.Context;
+			
+			import events.ContactEvent;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.logging.LogEventLevel;
+			import mx.managers.CursorManager;
+			import mx.rpc.AsyncResponder;
+			import mx.utils.ObjectUtil;
+			
+			import services.flexforforce.Account;
+			import services.flexforforce.Contact;
+			
+			private var contact:Contact;
+			
+			private var contacts:ArrayCollection;
+			
+			// Used to support Back button
+			private var history:Array = new Array();
+			
+			private var accounts:ArrayCollection;
+
+			private function loginClickHandler(event:MouseEvent = null) : void
+			{
+				f.visible = false;
+				f.includeInLayout = false;
+				CursorManager.setBusyCursor();
+				app.loginByCredentials(username.text, password.text);
+			}
+
+			private function loginFailedHandler(event:LoginFaultEvent):void
+			{
+				CursorManager.removeBusyCursor();
+				// By default an alert shows that the login failed. To implement your own logic
+				// you can override the default behavior by uncommenting the following line:
+				//event.preventDefault();
+				currentState = "login";
+			}
+
+			private function loginCompleteHandler(event:LoginResultEvent):void
+			{
+				CursorManager.removeBusyCursor();
+
+				app.wrapper.query("select Id, Name from Account", new AsyncResponder(function(data:ArrayCollection, token:Object):void {
+					//app.wrapper.releaseQueryResults(data);
+					
+					accounts = data;
+					
+					app.wrapper.query("select Id, AccountId, FirstName, LastName, Phone, MobilePhone, Email, Title, Department, MailingCity, photoData__c from Contact", new AsyncResponder(function(data:ArrayCollection, token:Object):void {
+						//app.wrapper.releaseQueryResults(data);
+						
+						for each (var contact:Contact in data)
+						{
+							for each (var account:Account in accounts)
+							{
+								if (account.Id == contact.AccountId)
+								{
+									contact.account = account;						
+								}
+							}
+						}
+						
+						contacts = data;
+						
+						contactList.contacts = contacts;
+						
+						currentState = "listOrDetails";
+						
+						//key.setFocus();
+						
+						h.visible = true;
+						
+					}, handleError));
+					
+				}, handleError));
+			}
+
+			private function sessionExpiredHandler(event:SessionExpiredEvent):void
+			{
+				event.preventDefault();
+
+				Alert.show( "Your session expired and was automatically renewed. Please repeat your last operation.", "Session Expired" );
+
+				CursorManager.setBusyCursor();
+				
+				app.loginByCredentials(username.text, password.text);
+			}
+			
+			private function uncaughtErrorHandler(event:UncaughtErrorEvent):void
+			{
+				currentState = "error";
+				
+				errorMessage.text = ObjectUtil.toString(event);
+			}
+			
+			private function search():void
+			{
+				currentState = "listOrDetails";
+				
+				mr.play();
+				
+				var _key:String = key.text;
+				// Remove speces (if any) at the end of the TextInput 
+				while (_key.charAt(_key.length-1)==" ")
+				{
+					_key = _key.substr(0, _key.length-1);
+				}
+				key.text = _key;
+				
+				var results:Array = new Array();
+				for each (var c:Contact in contacts)
+				{
+					if ((c.FirstName != null) && (c.FirstName.indexOf(_key) != -1))
+					{
+						results.push(c);
+					}
+					else if ((c.LastName != null) && (c.LastName.indexOf(_key) != -1))
+					{
+						results.push(c);
+					}
+				}
+				
+				contactList.contacts = new ArrayCollection(results);
+			}
+			
+			private function contactSelectedHandler(event:ContactEvent):void
+			{
+				openContact(event.contact);
+			}
+			
+			private function openContact(contact:Contact):void
+			{
+				history.push({contact: contact});
+				contactView.contact = contact;
+				currentState = "listOrDetails";
+				ml.play();
+			}
+			
+			private function stage_keyDownHandler(event:KeyboardEvent):void
+			{
+				contactList.onKeyDown(event);
+				
+				switch(event.keyCode)
+				{
+					case Keyboard.BACK: // Back button
+						if (h.x != 0)
+						{
+							event.stopImmediatePropagation();
+							event.preventDefault();
+
+							mr.play();
+						}
+						break;
+					
+					case Keyboard.SEARCH: // Search button
+						currentState = "listOrDetails";
+						mr.play();
+						key.setFocus();
+						break;
+				}
+			}
+			
+			public function handleError(error:Object, token:Object):void
+			{
+				currentState = "error";
+				
+				errorMessage.text = ObjectUtil.toString(error);
+			}
+		]]>
+	</fx:Script>
+	
+	<s:applicationComplete>
+		Context.setAttribute("history", history);
+
+		stage.addEventListener(KeyboardEvent.KEY_DOWN, stage_keyDownHandler);
+		
+		addEventListener(ContactEvent.SELECT, contactSelectedHandler);
+
+		loaderInfo.uncaughtErrorEvents.addEventListener(UncaughtErrorEvent.UNCAUGHT_ERROR, uncaughtErrorHandler);
+		
+		currentState = "login";
+	</s:applicationComplete>
+	
+	<s:states>
+		<s:State name="login"/>
+		<s:State name="listOrDetails"/>
+		<s:State name="error"/>
+	</s:states>
+
+	<s:Panel title="Salesforce.com Login" includeIn="login" horizontalCenter="0" verticalCenter="0">
+		<s:layout><s:VerticalLayout paddingBottom="10" paddingLeft="10" paddingRight="10" paddingTop="10"/></s:layout>
+		<mx:Form id="f">
+			<mx:FormItem label="Username">
+				<s:TextInput id="username" text="dev@mavericks.demo" height="50"/>
+			</mx:FormItem>
+			<mx:FormItem label="Password">
+				<s:TextInput id="password" displayAsPassword="true" enter="loginClickHandler()" text="123456" height="50"/>
+				<s:Button label="Login" enabled="{!app.loginPending}" click="loginClickHandler(event)" height="50"/>
+			</mx:FormItem>
+		</mx:Form>
+		<mx:ProgressBar indeterminate="true" visible="{app.loginPending}" includeInLayout="{app.loginPending}" width="100%"/>
+	</s:Panel>
+	
+	<s:Group minWidth="0" minHeight="0" width="100%" includeIn="listOrDetails">
+
+		<s:Rect left="0" right="0" top="0" bottom="1" >
+			<s:stroke>
+				<s:LinearGradientStroke rotation="90" weight="1">
+					<s:GradientEntry color="0xFFFFFF" />
+					<s:GradientEntry color="0xD8D8D8" />
+				</s:LinearGradientStroke>
+			</s:stroke>
+		</s:Rect>
+
+		<s:Rect left="1" right="1" top="1" bottom="2" >
+			<s:fill>
+				<s:LinearGradient rotation="90">
+					<s:GradientEntry color="0xEDEDED" />
+					<s:GradientEntry color="0xCDCDCD" />
+				</s:LinearGradient>
+			</s:fill>
+		</s:Rect>
+
+		<s:Rect left="0" right="0" bottom="0" height="1" alpha="0.55">
+			<s:fill>
+				<s:SolidColor color="0x000000" />
+			</s:fill>
+		</s:Rect>
+
+		<s:HGroup verticalAlign="middle" gap="-4" paddingLeft="12" paddingRight="12" paddingTop="12" paddingBottom="12" width="100%">
+			<s:TextInput id="key" width="100%" height="40" depth="1" enter="search()"/>
+			<mx:Button click="search()" height="40" width="70" icon="@Embed('assets/search.png')"/>
+		</s:HGroup>
+	</s:Group>	
+	
+	<s:HGroup id="h" top="64" bottom="0" gap="0" visible="false" width="{width * 2}">
+		<views:ContactList id="contactList" width="{width}" height="{h.height}"/>
+		<views:ContactView id="contactView" width="{width}" height="{h.height}"/>
+	</s:HGroup>
+	
+	<s:Panel title="Error" width="100%" height="100%" includeIn="error">
+		<s:Label id="errorMessage" width="100%" height="100%"/>
+	</s:Panel>
+
+</s:Application>

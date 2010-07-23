@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<actionScriptProperties analytics="false" mainApplicationPath="MobileContacts.mxml" projectUUID="847abd62-67ad-4b2e-a3f2-325f0b528720" version="6">
+  <compiler additionalCompilerArguments="-locale en_US" autoRSLOrdering="true" copyDependentFiles="true" flexSDK="Flex 4.1 &amp; AIR 2.5" fteInMXComponents="false" generateAccessible="true" htmlExpressInstall="true" htmlGenerate="false" htmlHistoryManagement="false" htmlPlayerVersionCheck="true" includeNetmonSwc="false" outputFolderPath="bin-debug" sourceFolderPath="src" strict="true" targetPlayerVersion="0.0.0" useApolloConfig="true" useDebugRSLSwfs="true" verifyDigests="true" warn="true">
+    <compilerSourcePath/>
+    <libraryPath defaultLinkType="0">
+      <libraryPathEntry kind="4" path="">
+        <excludedEntries>
+          <libraryPathEntry kind="3" linkType="1" path="${PROJECT_FRAMEWORKS}/libs/flex.swc" useDefaultLinkType="false"/>
+        </excludedEntries>
+      </libraryPathEntry>
+      <libraryPathEntry kind="1" linkType="1" path="libs"/>
+      <libraryPathEntry kind="3" linkType="1" path="/C:/eclipse-jee-helios-win32/plugins/com.salesforce.flexbuilder.projects.flexforforce_1.0.0/f3_libs/airfds.swc" useDefaultLinkType="false"/>
+      <libraryPathEntry kind="3" linkType="1" path="/C:/eclipse-jee-helios-win32/plugins/com.salesforce.flexbuilder.projects.flexforforce_1.0.0/f3_libs/f3_toolkit.swc" useDefaultLinkType="false"/>
+      <libraryPathEntry kind="3" linkType="1" path="/C:/eclipse-jee-helios-win32/plugins/com.salesforce.flexbuilder.projects.flexforforce_1.0.0/f3_libs/f3_air.swc" useDefaultLinkType="false"/>
+      <libraryPathEntry kind="3" linkType="1" path="/C:/eclipse-jee-helios-win32/plugins/com.salesforce.flexbuilder.projects.flexforforce_1.0.0/f3_libs/f3_common.swc" useDefaultLinkType="false"/>
+      <libraryPathEntry kind="1" linkType="1" path="${DCD_LIB_LOCATION}"/>
+      <libraryPathEntry kind="1" linkType="1" path="${DCD_LOCALE_LOCATION}"/>
+      <libraryPathEntry kind="3" linkType="1" path="${DCD_FIBER_LOCATION}/fiber.swc" useDefaultLinkType="false"/>
+      <libraryPathEntry kind="3" linkType="1" path="${DCD_FIBER_LOCALE_LOCATION}/fiber_rb.swc" useDefaultLinkType="false"/>
+      <libraryPathEntry kind="3" linkType="1" path="${DCD_FIBER_LOCATION}/playerfds.swc" useDefaultLinkType="false"/>
+      <libraryPathEntry kind="3" linkType="1" path="C:/eclipse-jee-helios-win32/plugins/com.salesforce.flexbuilder.projects.flexforforce_1.0.0/f3_libs/f3_flex.swc" useDefaultLinkType="false"/>
+    </libraryPath>
+    <sourceAttachmentPath/>
+  </compiler>
+  <applications>
+    <application path="MobileContacts.mxml">
+      <airExcludes/>
+    </application>
+  </applications>
+  <modules/>
+  <buildCSSFiles/>
+</actionScriptProperties>

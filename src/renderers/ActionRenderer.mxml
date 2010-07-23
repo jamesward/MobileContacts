@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Author: Christophe Coenraets, http://coenraets.org -->
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				xmlns:s="library://ns.adobe.com/flex/spark" 
+				xmlns:mx="library://ns.adobe.com/flex/mx" 
+				autoDrawBackground="true"
+				width="100%" height="70"
+				creationComplete="creationCompleteHandler(event)">
+
+	<fx:Script>
+		<![CDATA[
+			import events.*;
+			import events.ContactEvent;
+			
+			import flash.net.navigateToURL;
+			
+			
+			import mx.events.FlexEvent;
+
+			protected function creationCompleteHandler(event:FlexEvent):void
+			{
+//				if (Multitouch.supportsTouchEvents)
+//				{
+//					addEventListener(TouchEvent.TOUCH_TAP, selectHandler);
+//				}
+//				else
+//				{
+					addEventListener(MouseEvent.MOUSE_UP, selectHandler);
+//				}
+			}
+			
+			protected function selectHandler(event:Event):void
+			{
+				//dispatchEvent(new ActionEvent(ActionEvent.SELECT, data));
+				
+				switch (data.type)
+				{
+				
+					case "tel":
+						navigateToURL(new URLRequest("tel:"+data.details));
+						break;
+					
+					case "sms":
+						navigateToURL(new URLRequest("sms:"+data.details));
+						break;
+
+					case "mailto":
+						navigateToURL(new URLRequest("mailto:"+data.details));
+						break;
+
+				}					
+			}
+
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<s:AnimateColor id="acf" colorTo="#2222cc" target="{b}"/>
+		<s:AnimateColor id="acb" colorTo="#acacac" target="{b}"/>
+	</fx:Declarations>
+	
+	<s:rollOver>
+		acf.play();
+	</s:rollOver>
+	
+	<s:rollOut>
+		acb.play();
+	</s:rollOut>
+	
+	<s:Rect width="100%" height="100%">
+		<s:fill>
+			<s:SolidColor id="b" color="#acacac"/>
+		</s:fill>
+	</s:Rect>
+
+	<s:Label text="{data.name}" left="10" top="10" styleName="action"/>
+
+	<s:Label text="{data.details}" left="10" top="40" styleName="actionDetails"/>
+	
+	<s:BitmapImage source="{data.icon}" right="10" verticalCenter="0"/>
+	
+</s:ItemRenderer>

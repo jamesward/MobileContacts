@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark">
+
+	<fx:Script>
+		<![CDATA[
+			import com.salesforce.flexforforce.F3WebApplication;
+			import com.salesforce.flexforforce.F3WebWrapper;
+			
+			import context.Context;
+			
+			import events.ContactEvent;
+			
+			import mx.collections.ArrayCollection;
+			import mx.core.FlexGlobals;
+			import mx.graphics.codec.PNGEncoder;
+			import mx.rpc.AsyncResponder;
+			import mx.utils.Base64Decoder;
+			import mx.utils.Base64Encoder;
+			
+			import services.flexforforce.Contact;
+			
+			private var _contact:Contact;
+			
+			private var cameraUI:CameraUI;
+			
+			[Bindable]
+			public var actions:ArrayCollection;
+			
+			[Embed("/assets/sms.png")]
+			private var smsIcon:Class;
+
+			[Embed("/assets/phone.png")]
+			private var phoneIcon:Class;
+			
+			[Bindable]
+			public function set contact(contact:Contact):void
+			{
+				_contact = contact;
+				actions = new ArrayCollection();
+
+				if (contact.Phone)
+				{
+					actions.addItem(new Action("tel", "Call office", contact.Phone, phoneIcon));
+				}
+				if (contact.MobilePhone)
+				{
+					actions.addItem(new Action("tel", "Call mobile", contact.MobilePhone, phoneIcon));
+					actions.addItem(new Action("sms", "SMS", contact.MobilePhone, smsIcon));
+				}
+				if (contact.Email)
+				{
+					actions.addItem(new Action("mailto", "Email", contact.Email));
+				}
+				
+				if (actions.length > 0)
+				{
+					c.visible = true;
+				}
+				
+				displayPhoto();
+			}
+			
+			public function get contact():Contact
+			{
+				return _contact;
+			}
+			
+			private function displayPhoto():void
+			{
+				if (contact.photoData__c == null)
+				{
+					photo.visible = false;
+					return;
+				}
+				
+				var decoder:Base64Decoder = new Base64Decoder();
+				decoder.decode(contact.photoData__c);
+				
+				var loader:Loader = new Loader();
+				loader.contentLoaderInfo.addEventListener(Event.COMPLETE, function(event:Event):void {
+					photo.source = event.target.content;
+					photo.visible = true;
+				});
+				loader.loadBytes(decoder.toByteArray());
+			}
+
+		]]>
+	</fx:Script>
+	
+	<s:creationComplete>
+		addPhoto.visible = CameraUI.isSupported;
+	</s:creationComplete>
+	
+	<s:Label text="{contact.FirstName + ' ' + contact.LastName}" styleName="title" top="14" left="10"/>
+	<s:Label text="{contact.Title}" top="48" left="10"/>
+	<s:Label text="{contact.account.Name}" top="76" left="10"/>
+
+	<s:Group width="92" height="92" top="8" right="8">
+		<s:Rect width="92" height="92">
+			<s:fill>
+				<s:SolidColor color="#cccccc"/>
+			</s:fill>
+		</s:Rect>
+		
+		<s:Label id="addPhoto" text="Add a photo" width="92" height="92" verticalAlign="middle" textAlign="center"/>
+		
+		<s:BitmapImage id="photo" width="92" height="92"/>
+		
+		<s:click>
+			if (CameraUI.isSupported)
+			{
+				cameraUI = new CameraUI();
+				cameraUI.addEventListener(MediaEvent.COMPLETE, function(event:MediaEvent):void {
+					var loader:Loader = new Loader();
+					loader.load(new URLRequest(event.data.file.url));
+					loader.contentLoaderInfo.addEventListener(Event.COMPLETE, function(event:Event):void {
+						var bitmap:Bitmap = event.target.content as Bitmap;
+						
+						var result:BitmapData = new BitmapData(46, 46, false);
+						var matrix:Matrix = new Matrix();
+						matrix.scale(46 / bitmap.width, 46 / bitmap.height);
+						result.draw(bitmap, matrix);
+			
+						var pngEncoder:PNGEncoder = new PNGEncoder();
+						var pngBytes:ByteArray = pngEncoder.encode(result);
+			
+						var base64Encoder:Base64Encoder = new Base64Encoder();
+						base64Encoder.encodeBytes(pngBytes);
+						var encodedImage:String = base64Encoder.flush();
+						
+						contact.photoData__c = encodedImage;
+			
+						displayPhoto();
+						
+						F3WebApplication.getInstance().wrapper.save(contact, new AsyncResponder(function(data:Object, token:Object=null):void {
+							//trace('contact saved!');
+						}, FlexGlobals.topLevelApplication.handleError));
+
+					});
+					
+				});
+				cameraUI.addEventListener(ErrorEvent.ERROR, function(event:ErrorEvent):void {
+					FlexGlobals.topLevelApplication.handleError(event);
+				});
+				cameraUI.launch(MediaType.IMAGE);
+			}
+		</s:click>
+	</s:Group>
+		
+	<s:Line top="108" left="0" right="0">
+		<s:stroke>
+			<s:SolidColorStroke color="#505050" weight="1"/>
+		</s:stroke>
+	</s:Line>
+	
+	<s:Group id="c" styleName="list" top="109" left="0" right="0" bottom="0" visible="false">
+		
+		<s:Rect width="100%" height="100%">
+			<s:fill>
+				<s:SolidColor color="#505050"/>
+			</s:fill>
+		</s:Rect>
+		
+		<s:DataGroup dataProvider="{actions}" top="0" left="0" right="0" bottom="0" itemRenderer="renderers.ActionRenderer">
+			<s:layout>
+				<s:VerticalLayout gap="1"/>
+			</s:layout>
+		</s:DataGroup>
+		
+	</s:Group>
+	
+</s:Group>

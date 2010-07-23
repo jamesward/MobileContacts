@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				xmlns:s="library://ns.adobe.com/flex/spark" 
+				xmlns:mx="library://ns.adobe.com/flex/mx" 
+				width="100%" height="70"
+				creationComplete="creationCompleteHandler(event)"
+				contentBackgroundAlpha="1">
+
+	<fx:Script>
+		<![CDATA[
+			import events.ContactEvent;
+			
+			import mx.events.FlexEvent;
+			
+			import services.flexforforce.Contact;
+
+			protected function creationCompleteHandler(event:FlexEvent):void
+			{
+				if (Multitouch.supportsTouchEvents)
+				{
+					addEventListener(TouchEvent.TOUCH_TAP, selectHandler);
+				}
+				else
+				{
+					addEventListener(MouseEvent.MOUSE_UP, selectHandler);
+				}
+			}
+			
+			protected function selectHandler(event:Event):void
+			{
+				dispatchEvent(new ContactEvent(ContactEvent.SELECT, data as Contact));
+			}
+
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<s:AnimateColor id="acf" colorTo="#2222cc" target="{b}"/>
+		<s:AnimateColor id="acb" colorTo="#acacac" target="{b}"/>
+	</fx:Declarations>
+	
+	<s:rollOver>
+		acf.play();
+	</s:rollOver>
+	
+	<s:rollOut>
+		acb.play();
+	</s:rollOut>
+	
+	<s:Rect width="100%" height="100%">
+		<s:fill>
+			<s:SolidColor id="b" color="#acacac"/>
+		</s:fill>
+	</s:Rect>
+
+	<s:Label text="{data.FirstName + ' ' + data.LastName}" left="10" top="10" maxDisplayedLines="1"/>
+	
+	<s:Label text="{data.account.Name}" left="10" top="36" maxDisplayedLines="1"/>
+	
+</s:ItemRenderer>

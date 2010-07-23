@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<application xmlns="http://ns.adobe.com/air/application/2.5">
+	<id>MobileContacts</id>
+	<filename>MobileContacts</filename>
+	<name>Salesforce.com Contacts</name>
+	<versionNumber>1.0.0</versionNumber>
+	<initialWindow>
+		<content>[This value will be overwritten by Flash Builder in the output app.xml]</content>
+		<visible>true</visible>
+		<autoOrients>false</autoOrients>
+	</initialWindow>
+	<android>
+		<manifestAdditions>
+	      <manifest>
+	            <data>
+	          		<![CDATA[
+	          		<uses-permission android:name="android.permission.INTERNET"/>
+	          		]]>
+	            </data>
+	        </manifest>
+	    </manifestAdditions>
+	</android>
+</application>

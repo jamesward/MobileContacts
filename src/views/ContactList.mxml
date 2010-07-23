@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 styleName="list"
+		 creationComplete="completeHandler(event)"
+		 focusEnabled="true">
+	
+	<fx:Script>
+		<![CDATA[
+			import events.ContactEvent;
+			
+			import mx.collections.ArrayCollection;
+			import mx.events.FlexEvent;
+			
+			import services.flexforforce.Scontrol;
+			
+
+			public function set contacts(contacts:ArrayCollection):void
+			{
+				dg.dataProvider = contacts;
+				dg.verticalScrollPosition = 0;
+				
+			}
+			
+			private var prevY:Number;
+			
+			private var velocity:Number = 0;
+			
+			private var lastMove:Number = 0;
+			
+			private var initialY:Number;
+			
+			private var preventSelect:Boolean = true;
+			
+			protected function completeHandler(event:Event):void
+			{
+				if (Multitouch.supportsTouchEvents)
+				{
+					Multitouch.inputMode = MultitouchInputMode.TOUCH_POINT;
+					addEventListener(TouchEvent.TOUCH_BEGIN, onTouchBegin, true);
+					addEventListener(TouchEvent.TOUCH_MOVE, onTouchMove, true);
+					addEventListener(TouchEvent.TOUCH_END, onTouchEnd, true);
+				}
+				
+				addEventListener(MouseEvent.MOUSE_WHEEL, handleWheelScroll);
+				addEventListener(ContactEvent.SELECT, function(event:ContactEvent):void {
+					if (preventSelect)
+					{
+						event.stopImmediatePropagation();
+					}
+				});
+			}
+			
+			private function handleWheelScroll(event:MouseEvent):void
+			{
+				scrollIndicator.visible = true;
+				
+				annimateScroll( (event.delta * -100) );
+			}
+						
+			protected function onTouchBegin(event:TouchEvent):void
+			{
+				initialY = event.stageY;
+				preventSelect = true;
+				
+				velocity = 0;
+				
+				if (a.isPlaying)
+				{
+					a.stop();
+				}
+				
+				scrollIndicator.visible = true;
+				
+				prevY = event.stageY;
+			}
+			
+			protected function onTouchMove(event:TouchEvent):void
+			{
+				var deltaY:Number = Math.round((prevY - event.stageY));
+				
+				// average the current velocity with the new velocity
+				velocity = (deltaY + velocity) / 2;
+				
+				var desiredY:Number = dg.verticalScrollPosition + deltaY;
+				
+				scrollTo(desiredY);
+				
+				prevY = event.stageY;
+				
+				lastMove = new Date().time;
+				
+				event.preventDefault();
+				event.stopImmediatePropagation();
+				event.stopPropagation();
+			}
+			
+			protected function onTouchEnd(event:TouchEvent):void
+			{
+				if ((event.stageY - initialY < 10) && (initialY - event.stageY < 10))
+				{
+					preventSelect = false;
+				}
+				
+				var scrollDistance:Number = (velocity * 6);
+				
+				annimateScroll(scrollDistance);
+			}
+			
+			public function onKeyDown(event:KeyboardEvent):void
+			{
+				if (event.keyCode == Keyboard.UP)
+				{
+					annimateScroll(-160);
+				}
+				else if (event.keyCode == Keyboard.DOWN)
+				{
+					annimateScroll(160);
+				}
+			}
+			
+			private function annimateScroll(scrollDistance:Number):void
+			{
+				// calc distance
+				smp.valueFrom = dg.verticalScrollPosition;
+				if (dg.verticalScrollPosition + scrollDistance < 0)
+				{
+					smp.valueTo = 0;
+				}
+				else if (dg.verticalScrollPosition + scrollDistance + this.height > dg.contentHeight)
+				{
+					smp.valueTo = dg.contentHeight - this.height;
+				}
+				else
+				{
+					smp.valueTo = dg.verticalScrollPosition + scrollDistance;
+				}
+				
+				if (a.isPlaying)
+				{
+					a.stop();
+				}
+				a.play();
+			}
+			
+			protected function scrollTo(y:Number):void
+			{
+				if (y < 0)
+				{
+					y = 0;
+					
+					velocity = 0;
+				}
+				else if (y > (dg.contentHeight - this.height))
+				{
+					y = dg.contentHeight - this.height;
+					
+					velocity = 0;
+				}
+				
+				dg.verticalScrollPosition = y;
+				
+				moveScrollIndicator();
+			}			
+			
+			private function moveScrollIndicator():void
+			{
+				var percetageScrolled:Number = dg.verticalScrollPosition / (dg.contentHeight - this.height);
+				scrollIndicator.y = ((this.height - scrollIndicator.height - 20) * percetageScrolled) + 10;
+			}
+		]]>
+	</fx:Script>
+	
+	<s:addedToStage>
+		// no idea why this isn't working
+		//stage.addEventListener(KeyboardEvent.KEY_DOWN, keyDownHandler);
+	</s:addedToStage>
+
+	<fx:Declarations>
+		<s:Animate id="a" target="{dg}" duration="1000">
+			<s:motionPaths>
+				<s:SimpleMotionPath id="smp" property="verticalScrollPosition"/>
+			</s:motionPaths>
+			<s:easer>
+				<s:Power exponent="4" easeInFraction="0"/>
+			</s:easer>
+			<s:effectStart>
+				scrollIndicator.visible = true;
+			</s:effectStart>
+			<s:effectEnd>
+				scrollIndicator.visible = false;
+			</s:effectEnd>
+			<s:effectUpdate>
+				moveScrollIndicator();
+			</s:effectUpdate>
+		</s:Animate>
+	</fx:Declarations>
+	
+	<s:Rect width="100%" height="100%">
+		<s:fill>
+			<s:SolidColor color="#505050"/>
+		</s:fill>
+	</s:Rect>
+	
+	<s:DataGroup id="dg" itemRenderer="renderers.ContactRenderer" width="100%" height="100%" clipAndEnableScrolling="true">
+		<s:layout>
+			<s:VerticalLayout paddingLeft="0" paddingRight="0" paddingTop="0" paddingBottom="0" gap="1" useVirtualLayout="false"/>
+		</s:layout>
+	</s:DataGroup>
+	
+	<s:Rect id="scrollIndicator" right="8" width="4" height="{(this.height / dg.contentHeight) * this.height}" minHeight="50" maxHeight="{this.height - 20}" visible="false"
+			bottomLeftRadiusX="2" bottomRightRadiusX="2" topLeftRadiusX="2" topRightRadiusX="2">
+		<s:stroke>
+			<s:SolidColorStroke color="0x7C7C7C" weight="1"/>
+		</s:stroke>
+		<s:fill>
+			<s:SolidColor color="0x707070"/>
+		</s:fill>
+	</s:Rect>
+
+</s:Group>
